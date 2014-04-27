@@ -1,0 +1,21 @@
+{
+  "name": "Dungeonollo",
+  "version": "0.0.0",
+  "description": "A realtime mutliplayer text-based dungeon game engine ",
+  "main": "game.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:abeisgreat/Dungeonollo.git"
+  },
+  "keywords": [
+    "dungeon"
+  ],
+  "author": "Abe Haskins <abeisgreat@abeisgreat.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/abeisgreat/Dungeonollo/issues"
+  }
+}
