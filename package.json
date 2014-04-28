@@ -17,5 +17,10 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/abeisgreat/Dungeonollo/issues"
+  },
+  "dependencies": {
+    "firebase": "~1.0.11",
+    "underscore": "~1.6.0",
+    "watchjs": "0.0.0"
   }
 }

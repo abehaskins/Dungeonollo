@@ -1,0 +1,13 @@
+<span>Game - <b>{{config.serverName}}/{{config.gameName}}</b></span>
+<h1>Dungeonollo</h1>
+<div class="responses">
+    <pre ng-repeat="response in history track by $index" scroll-if="$index = history.length-1">
+{{response.type}}{{response.text}}
+    </pre>
+</div>
+<div class="input">
+    <form ng-submit="sendCommand()">
+        <input type="text" placeholder="Enter a command..." ng-model="command" />
+        <input type="submit" />
+    </form>
+</div>
