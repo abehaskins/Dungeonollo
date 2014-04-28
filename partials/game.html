@@ -1,13 +1,13 @@
 <span>Game - <b>{{config.serverName}}/{{config.gameName}}</b></span>
-<h1>Dungeonollo</h1>
+<div class="title">
+    <h1>Dungeonollo</h1><h2>{{game.hasServer?'':'(Offline)'}}</h2>
+</div>
 <div class="responses">
-    <pre ng-repeat="response in history track by $index" scroll-if="$index = history.length-1">
-{{response.type}}{{response.text}}
-    </pre>
+    <pre ng-repeat="response in history track by $index" scroll-if="$index = history.length-1">{{response.type}}{{response.text}}</pre>
 </div>
 <div class="input">
     <form ng-submit="sendCommand()">
-        <input type="text" placeholder="Enter a command..." ng-model="command" />
-        <input type="submit" />
+        <input type="text" placeholder="Enter a command..." ng-model="command" autofocus/>
+        <input type="submit" value="Send"/>
     </form>
 </div>

@@ -9,6 +9,7 @@ var Dungeonollo = function (firebaseName, gameName) {
     self._ref = (new Firebase("https://" + firebaseName + ".firebaseio.com"));
     self._gameRef = self._ref.child("dungeonollo").child(gameName);
     self._publicStateRef = self._gameRef.child('publicState');
+    self._data = require('./games/pirates');
     
     self._publicState = {
         hasServer: true,
@@ -55,22 +56,23 @@ var Dungeonollo = function (firebaseName, gameName) {
             
             playerRef.child("commandQueue").on("child_added", function (snapshot) {
                 var responseRef = snapshot.ref().child("response");
-                responseRef.set(self._execute(snapshot.val(), playerId, playerRef.child("state"))); 
+                var player = self._players[playerId];
+                responseRef.set(self._execute(snapshot.val(), player, playerRef.child("state"))); 
+                playerRef.child('state').set(player);
             });
             
             playerRef.child("events").push("Welcome to Dungeonollo! Run \"begin\" to set up a character!");
         };  
     };
     
-    self._execute = function (commandStr, playerId, playerRef) {
-        var player =  self._players[playerId];
+    self._execute = function (commandStr, player, playerRef) {
         var name = commandStr.split(" ")[0];
         var obj = self._commands[name];
-        var args = [player, playerRef];
+        var args = [];
         
         if (!obj) obj = self._commands.default;
         
-        if (obj.available && !obj.available.apply(self, args)) obj = self._commands.default;
+        if (obj.available && !obj.available.apply(self, [player].concat(args))) obj = self._commands.default;
         
         if (obj.parser) {
             (commandStr.match(obj.parser) || []).forEach(function (str) {
@@ -80,16 +82,10 @@ var Dungeonollo = function (firebaseName, gameName) {
         }
         
         if (obj.broadcast) {
-            var players = self._playersInRange(player, obj.broadcast.distance);
-            _(players).forEach(function (otherPlayer, otherPlayerId) {
-                if (otherPlayer == player) return;
-                self._gameRef
-                    .child(["players", otherPlayerId, "events"].join('/'))
-                    .push(obj.broadcast.func(player, otherPlayer))  ;
-            });
+            self._broadcast(player, obj.broadcast.distance, obj.broadcast.func, args)
         }
         
-        return obj.func.apply(self, args);
+        return obj.func.apply(self, [player].concat(args));
     };
     
     self._playersInRange = function (broadcastingPlayerState, maxDistance) {
@@ -105,63 +101,17 @@ var Dungeonollo = function (firebaseName, gameName) {
         return playersInRange;
     };
     
-    self._commands = {
-        default: {
-            func: function (player, playerStateRef) {
-                return "Unknown Command - use \"help\" for a list of commands";
-            }
-        },
-        help: {
-            help: "help - This menu :)",
-            func: function (player, playerStateRef) {
-                var helpers = ["Commands:\n"];
-                _(self._commands).forEach(function (command, name) {
-                    if (command.help && (!command.available || command.available.apply(self, [player, playerStateRef]))) {
-                        helpers.push(command.help);   
-                    }
-                });
-                return helpers.join("\n");
-            },
-            broadcast: {
-                distance: 1.5, // i.e. 1 block in any direction including diagonal,
-                func: function (player, otherPlayer) {
-                    // if player is X+1 Y+1 then say Someone is calling for help to the North-east
-                    return "Someone near by is yelling for help!";
-                }
-            }
-        },
-        begin: {
-            help: "begin - create your character and begin the game.",
-            func: function (player, playerStateRef, name) {
-                playerStateRef.child("isReady").set(true);
-                return "You are now ready to begin your adventure!"
-            },
-            available: function (player, playerStateRef) {
-                return !player.isReady;   
-            }
-        },
-        set: {
-            parser: /set (.+) (.+)/,
-            help: "set (key) (value) - store data about you (name, class, etc).",
-            func: function (player, playerStateRef, key, value) {
-                playerStateRef.child(key).set(value);
-                return key + " has been set to " + value;
-            }
-        },
-        hello: {
-            help: "hello - receive a greeting from the server.",
-            func: function (player, playerStateRef, name) {
-                if (player.name) {
-                    return "Hello " + player.name + "!";   
-                } else {
-                    return "Hello Stranger! (Set your name with \"set name NAME\")";  
-                }
-            },
-            available: function (player, playerStateRef) {
-                return player.isReady;   
-            }
-        }
+    self._broadcast = function (player, distance, func, args) {
+        var players = self._playersInRange(player, distance);
+        _(players).forEach(function (otherPlayer, otherPlayerId) {
+            if (otherPlayer == player) return;
+            self._gameRef
+                .child(["players", otherPlayerId, "events"].join('/'))
+                .push(func.apply(self, [player, otherPlayer].concat(args)))  ;
+        });  
     };
+    
+    self._commands = require('./commands');
 };
 
 new Dungeonollo(process.argv[2], process.argv[3]);
